@@ -15,7 +15,6 @@ __pycache__/
 *.so
 
 *.mp4
-*.gif
 *.pb
 *.ckpt*
 *.weights*
