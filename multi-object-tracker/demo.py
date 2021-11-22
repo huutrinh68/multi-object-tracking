@@ -141,7 +141,12 @@ def main(video_path, model, tracker):
     cap = cv2.VideoCapture(video_path)
     # cap = cv2.VideoCapture(0)
     final_image = None
+    skip_frame = 2
+    i = 0
     while True:
+        i += 1
+        if i == 1000:
+            i = 0
         ok, image = cap.read()
 
         if not ok:
@@ -228,7 +233,7 @@ def main(video_path, model, tracker):
         #         text = "{}: {}".format(k, v)
         #         cv2.putText(updated_image, text, (10, H - ((i * 20) + 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
 
-        if writer is not None:
+        if writer is not None and i % skip_frame == 0:
             writer.write(updated_image)
 
         # show result
