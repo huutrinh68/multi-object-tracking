@@ -9,7 +9,9 @@ import numpy
 import datetime
 
 # VIDEO_FILE = "./examples/video_data/Aeon_inout_movie3_20fps.mp4"
-VIDEO_FILE = "./examples/video_data/Aeon_inout_movie2_20fps.mp4"
+# VIDEO_FILE = "./examples/video_data/Aeon_inout_movie2_20fps.mp4"
+VIDEO_FILE = "./examples/video_data/20211122_video2.mp4"
+# VIDEO_FILE = "./examples/video_data/20211122_video2.mp4"
 # VIDEO_FILE = "./examples/video_data/video2_20fps.mp4"
 WEIGHTS_PATH = ('./examples/pretrained_models/tensorflow_weights/ssd_mobilenet_v2_coco_2018_03_29/frozen_inference_graph.pb')
 CONFIG_FILE_PATH = './examples/pretrained_models/tensorflow_weights/ssd_mobilenet_v2_coco_2018_03_29.pbtxt'
@@ -111,6 +113,20 @@ def find_stay_time(track_id, pts):
 
     return stay_time
 
+def drawMovementFlow(pts, image):
+    for track_id, value in pts.items():
+        # get random color
+        color = list(np.random.choice(range(256), size=3))
+        # convert int64 to int, then get tuple
+        color = tuple(list(map(int, color)))
+        tracjectories = [(v['x_c'], v['y_c']) for v in value]
+        tracjectories = tracjectories[::-1]
+
+        for i in range(1, len(tracjectories)):
+            cv2.line(image, tracjectories[i - 1], tracjectories[i], color, 1)
+
+    return image
+
 
 def main(video_path, model, tracker):
     global H, W
@@ -124,6 +140,7 @@ def main(video_path, model, tracker):
 
     cap = cv2.VideoCapture(video_path)
     # cap = cv2.VideoCapture(0)
+    final_image = None
     while True:
         ok, image = cap.read()
 
@@ -182,11 +199,12 @@ def main(video_path, model, tracker):
             # draw
             clr = (255, 0, 255)
             cv2.rectangle(updated_image, (bb[0], bb[1]), (bb[0] + bb[2], bb[1] + bb[3]), clr, 2)
-            label = "ID{}: {:.1f}s".format(track_id, stay_time)
-            (label_width, label_height), baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
-            y_label = max(bb[1], label_height)
-            cv2.rectangle(updated_image, (bb[0], y_label - label_height), (bb[0] + label_width, y_label + baseLine), (255, 255, 255), cv2.FILLED)
-            cv2.putText(updated_image, label, (bb[0], y_label), cv2.FONT_HERSHEY_SIMPLEX, 0.5, clr, 2)
+            # label = "ID{}: {:.1f}s".format(track_id, stay_time)
+            # label = "ID{}: {:.1f}s".format(track_id, stay_time)
+            # (label_width, label_height), baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
+            # y_label = max(bb[1], label_height)
+            # cv2.rectangle(updated_image, (bb[0], y_label - label_height), (bb[0] + label_width, y_label + baseLine), (255, 255, 255), cv2.FILLED)
+            # cv2.putText(updated_image, label, (bb[0], y_label), cv2.FONT_HERSHEY_SIMPLEX, 0.5, clr, 2)
 
         # draw centertroid
         # updated_image = draw_tracks(updated_image, tracks)
@@ -214,14 +232,17 @@ def main(video_path, model, tracker):
             writer.write(updated_image)
 
         # show result
-        cv2.imshow("People Counter", updated_image)
+        # cv2.imshow("People Counter", updated_image)
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
             break
         if key == ord('p'):
             cv2.waitKey(-1)
         # time.sleep(0.01)
+        final_image = image
 
+    final_image = drawMovementFlow(pts, final_image)
+    cv2.imwrite('./output.png', final_image)
     cap.release()
     cv2.destroyAllWindows()
 
